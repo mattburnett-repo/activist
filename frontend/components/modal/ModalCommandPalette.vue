@@ -3,134 +3,157 @@
     @closeModal="handleCloseModal"
     :isOpen="modalShouldClose == false ? modalIsOpen : false"
   >
-    <!-- SEARCH BOX -->
-    <div
-      class="focus-inside elem-shadow-sm my-2.5 flex w-[90%] grow select-none items-center justify-between rounded-md bg-light-layer-2 px-2 py-1 text-left text-light-distinct-text transition duration-200 dark:bg-dark-layer-2 dark:text-dark-distinct-text"
-    >
-      <div class="flex items-center space-x-2 pl-1">
-        <Icon :name="IconMap.SEARCH" size="1em" />
-        <label for="search-input" class="sr-only">{{
-          $t("_global.search")
-        }}</label>
-        <!-- TODO: figure out if/why we need the ref="input" attrib  -->
-        <!-- TODO: add cancel functionality inside of input box -->
-        <input
-          v-model="searchTerm"
-          ref="input"
-          id="search-input"
-          class="bg-transparent outline-none"
-          type="text"
-          size="100"
-          :placeholder="$t('_global.search')"
-        />
+    <template>
+      <div>
+        <button
+          @click="_isOpen = true"
+          class="rounded bg-blue-500 p-2 text-white"
+        >
+          Open Command Palette
+        </button>
+
+        <TransitionRoot :show="_isOpen" as="template">
+          <Dialog
+            @close="_isOpen = false"
+            as="div"
+            class="fixed inset-0 z-10 overflow-y-auto"
+          >
+            <div class="flex min-h-screen items-center justify-center px-4">
+              <DialogOverlay class="fixed inset-0 bg-black opacity-50" />
+
+              <span
+                class="inline-block h-screen align-middle"
+                aria-hidden="true"
+                >&#8203;</span
+              >
+
+              <div
+                class="my-8 inline-block w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all"
+              >
+                <DialogTitle class="text-lg font-medium leading-6 text-gray-900"
+                  >Command Palette</DialogTitle
+                >
+
+                <Combobox v-model="selectedCommand" @change="handleCommand">
+                  <div class="relative mt-4">
+                    <div
+                      class="relative w-full cursor-default rounded-lg bg-white text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 sm:text-sm"
+                    >
+                      <ComboboxInput
+                        @keydown.enter="handleEnter"
+                        class="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 placeholder-gray-400 focus:ring-0"
+                        placeholder="Type a command..."
+                      />
+                    </div>
+
+                    <Transition
+                      as="template"
+                      enter="transition ease-out duration-100"
+                      enterFrom="opacity-0 scale-95"
+                      enterTo="opacity-100 scale-100"
+                      leave="transition ease-in duration-75"
+                      leaveFrom="opacity-100 scale-100"
+                      leaveTo="opacity-0 scale-95"
+                    >
+                      <ComboboxOptions
+                        class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                      >
+                        <ComboboxOption
+                          v-for="command in filteredCommands"
+                          v-slot="{ active }"
+                          :key="command.id"
+                          :value="command"
+                          as="template"
+                        >
+                          <li
+                            :class="[
+                              'relative cursor-pointer select-none py-2 pl-10 pr-4',
+                              active
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-900',
+                            ]"
+                          >
+                            {{ command.name }}
+                          </li>
+                        </ComboboxOption>
+                      </ComboboxOptions>
+                    </Transition>
+                  </div>
+                </Combobox>
+              </div>
+            </div>
+          </Dialog>
+        </TransitionRoot>
       </div>
-    </div>
-
-    <!-- SEARCH RESULTS -->
-    <!-- TODO: <CommandPaletteSearchResults results='searchResults' /> -->
-    <div v-if="searchTerm != ''">searchTerm: {{ searchTerm }}</div>
-
-    <!-- DISPLAY ITEMS -->
-    <div class="max-h-[30rem] overflow-scroll">
-      <!-- PAGES -->
-      <DialogTitle class="mt-5 flex justify-between font-display">
-        <p class="md:responsive-h3 pb-3 text-3xl font-bold">
-          {{ $t("components.modal-command-palette.pages-header") }}
-        </p>
-      </DialogTitle>
-      <CommandPaletteItem @itemClicked="handleCloseModal" itemType="home" />
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="upcoming-events"
-      />
-      <!-- don't have notifications yet -->
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="notifications"
-      />
-      <!-- don't have discussions yet -->
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="discussions"
-      />
-
-      <!-- ORGANIZATIONS -->
-      <DialogTitle class="mt-3 flex justify-between font-display">
-        <p class="md:responsive-h3 pb-3 text-3xl font-bold">
-          {{ $t("components._global.organizations") }}
-        </p>
-      </DialogTitle>
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="organizations"
-      />
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="organizations"
-      />
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="organizations"
-      />
-
-      <!-- RESOURCES -->
-      <!-- TODO: enable this when we have a better idea of what resources -->
-      <!-- <DialogTitle class="mt-3 flex justify-between font-display">
-        <p class="md:responsive-h3 pb-3 text-3xl font-bold">
-          {{ $t("_global.resources") }}
-        </p>
-      </DialogTitle>
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="resources"
-      />
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="resources"
-      />
-      <CommandPaletteItem
-        @itemClicked="handleCloseModal"
-        itemType="resources"
-      /> -->
-
-      <!-- EVENTS -->
-      <DialogTitle class="mt-3 flex justify-between font-display">
-        <p class="md:responsive-h3 pb-3 text-3xl font-bold">
-          {{ $t("_global.events") }}
-        </p>
-      </DialogTitle>
-      <CommandPaletteItem @itemClicked="handleCloseModal" itemType="events" />
-      <CommandPaletteItem @itemClicked="handleCloseModal" itemType="events" />
-      <CommandPaletteItem @itemClicked="handleCloseModal" itemType="events" />
-    </div>
+    </template>
   </ModalBase>
 </template>
 
 <script setup lang="ts">
-import { IconMap } from "~/types/icon-map";
-import { DialogTitle } from "@headlessui/vue";
+import { ref, computed } from "vue";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogTitle,
+  TransitionRoot,
+} from "@headlessui/vue";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxOptions,
+  ComboboxOption,
+} from "@headlessui/vue";
 
-// TODO: maybe get rid of isOpen, modalIsOpen and modalShouldClose, since all we really
-//  need is the 'closeModal' emit in 'handleCloseModal'
+interface Command {
+  id: number;
+  name: string;
+  action: () => void;
+}
+
+const commands: Command[] = [
+  { id: 1, name: "Open Settings", action: () => console.log("Open Settings") },
+  { id: 2, name: "Open Profile", action: () => console.log("Open Profile") },
+  { id: 3, name: "Logout", action: () => console.log("Logout") },
+];
+
 const props = defineProps<{
   isOpen: boolean;
 }>();
+
+// const _isOpen = ref(false);
+const _isOpen = ref(true);
+const searchTerm = ref("");
+const selectedCommand = ref<Command | null>(null);
+
 const modalIsOpen = computed(() => props.isOpen);
 const modalShouldClose = ref(false);
 
-const searchTerm = ref("");
-// const searchResults = []
-
 const emit = defineEmits(["closeModal"]);
 const handleCloseModal = () => {
+  modalShouldClose.value = true;
   emit("closeModal");
+  modalShouldClose.value = false;
 };
 
-// Watch the searchTerm ref variable
-watch(searchTerm, (newVal) => {
-  console.log("searchTerm changed: " + newVal);
-
-  // TODO: Filter items based on selected filters.
-  //    create fake data to demo basic search functionality
+const filteredCommands = computed(() => {
+  return commands.filter((command) =>
+    command.name.toLowerCase().includes(searchTerm.value.toLowerCase())
+  );
 });
+
+const handleEnter = () => {
+  if (selectedCommand.value) {
+    selectedCommand.value.action();
+    _isOpen.value = false;
+  }
+};
+
+const handleCommand = (command: Command) => {
+  command.action();
+  _isOpen.value = false;
+};
 </script>
+
+<style scoped>
+/* Add any additional custom styles here if needed */
+</style>
